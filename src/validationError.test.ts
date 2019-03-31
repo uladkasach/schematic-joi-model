@@ -19,6 +19,11 @@ Errors on 1 properties were found while validating properties for model RaceCar.
     "type": "string.guid"
   }
 ]
+
+Props Provided:
+{
+  "uuid": "true"
+}
     `.trim());
     expect(betterError.details).toMatchObject([{
       message: '"uuid" must be a valid GUID',
