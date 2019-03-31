@@ -1,9 +1,10 @@
 // tslint:disable max-classes-per-file
 import Joi from 'joi';
 import ValidationError from './validationError';
+import getMatchedObjectSchemaFromGeneralSchema from './utils/getMatchedObjectSchemaFromGeneralSchema';
 
 export default abstract class SchematicJoiModel<ConstructorTypes> {
-  protected static schema: Joi.ObjectSchema;
+  protected static schema: Joi.ObjectSchema | Joi.AlternativesSchema;
   protected static dependencies: { [index: string]: new (props: any) => SchematicJoiModel<any> };
 
   // validation and assignment
@@ -16,8 +17,11 @@ export default abstract class SchematicJoiModel<ConstructorTypes> {
     const modelName = (this.constructor as typeof SchematicJoiModel).name;
     if (!!result.error) throw new ValidationError({ model: modelName, error: result.error, props });
 
+    // determine which Joi.object schema we used (e.g., if the root schema was a Joi.alternatives)
+    const matchedSchema = getMatchedObjectSchemaFromGeneralSchema({ schema, props });
+
     // map schema params to self
-    const description = Joi.describe(schema);
+    const description = Joi.describe(matchedSchema);
     const children = description.children;
     const dependencies = (this.constructor as typeof SchematicJoiModel).dependencies;
     Object.keys(children).forEach((key) => {

@@ -92,6 +92,64 @@ returns:
 ```
 Notice that the avatar property of the instance of the instantiated `User` model is an instance of the `Image` model
 
+#### Highly Constrainted Model
+Some models you may define with full data - and some may be valid to define with only a uuid and expect the full data to be derivable after the fact. In order to not allow partial information, a model can be created with the following syntax:
+
+```js
+const fullDataSchema = Joi.object().keys({
+  uuid: Joi.string().uuid().required(),
+  make: Joi.string().valid(['ford', 'gmc', 'honda', 'toyota']).required(),
+  model: Joi.string().required(),
+});
+const rootDataOnlySchema = Joi.object().keys({
+  make: Joi.string().valid(['ford', 'gmc', 'honda', 'toyota']).required(),
+  model: Joi.string().required(),
+});
+const uuidOnlySchema = Joi.object().keys({
+  uuid: Joi.string().uuid().required(),
+});
+const fullSchema = Joi.alternatives().try([fullDataSchema, rootDataOnlySchema, uuidOnlySchema]);
+interface FullDataCarConstructorParams {
+  uuid: string;
+  make: string;
+  model: string;
+}
+interface RootDataCarConstructorParams {
+  make: string;
+  model: string;
+}
+interface UuidOnlyCarConstructorParams {
+  uuid: string;
+}
+type CarConstructorParams = FullDataCarConstructorParams | RootDataCarConstructorParams | UuidOnlyCarConstructorParams;
+class Car extends SchematicJoiModel<CarConstructorParams> {
+  public uuid?: string;
+  public make?: string;
+  public model?: string;
+  public static schema = fullSchema;
+}
+
+// we can now initalize the model with only the RootData
+const car = new Car({ make: 'honda', model: 'odessy' });
+expect(car).toMatchObject({ make: 'honda', model: 'odessy' }); // true
+
+// or with only the uuid
+const car = new Car({ uuid: '88d0a45a-e374-4e30-83de-6840c2ab8cc3' });
+expect(car).toMatchObject({ uuid: '88d0a45a-e374-4e30-83de-6840c2ab8cc3' }); // true
+
+// or with the full data
+const car = new Car({ uuid: '88d0a45a-e374-4e30-83de-6840c2ab8cc3', make: 'honda', model: 'odessy' });
+expect(car).toMatchObject({ uuid: '88d0a45a-e374-4e30-83de-6840c2ab8cc3', make: 'honda', model: 'odessy' }); // true
+
+// but not the partial data
+try {
+  new Car({ uuid: '88d0a45a-e374-4e30-83de-6840c2ab8cc3', model: 'odessy' }); // tslint:disable-line no-unused-expression
+  throw new Error('should not reach here');
+} catch (error) {
+  expect(error.constructor).toEqual(ValidationError); // true
+}
+```
+
 ## To Do
 #### deduplication of type definitions
 It is clear to see that we are duplicating the logic defining the types of the properties of the model objects between the Joi Schemas and Typescript Typedefs. It would be ideal if we could assign the Typescript model properties' typedefs directly from the Joi schema.
