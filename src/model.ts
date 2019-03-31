@@ -21,10 +21,18 @@ export default abstract class SchematicJoiModel<ConstructorTypes> {
     const children = description.children;
     const dependencies = (this.constructor as typeof SchematicJoiModel).dependencies;
     Object.keys(children).forEach((key) => {
-      // derive value
+      // define the raw value
       const rawValue = (props as any)[key];
+
+      // define facts relevant for value derivation
       const keyHasDependency = !!dependencies && key in dependencies;
-      const value = (keyHasDependency) ? new dependencies[key](rawValue) : rawValue;
+      const keyIsForArray = Array.isArray(rawValue);
+      const castingMethod = (keyHasDependency) ? (value: any) => new dependencies[key](value) : (value: any) => value;
+
+      // derive the value
+      const valueArray = (keyIsForArray) ? rawValue : [rawValue]; // cast raw value into array, if not already
+      const castedValueArray = valueArray.map(castingMethod); // cast the values w/ method defined
+      const value = (keyIsForArray) ? castedValueArray : castedValueArray[0];
 
       // append value as property of this instance
       (this as any)[key] = value;
