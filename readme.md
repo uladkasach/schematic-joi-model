@@ -3,11 +3,11 @@
 ## Overview
 This extendable class does two specific things:
 1. makes it easy to create and manage objects that conform to a specific schema
-  1. schema is used to validate arguments passed to the constructor
-  2. schema validation errors are thrown after being casted to a helpful representation
-  3. all properties of arguments that match keys of the model schema are assigned to the object during construction
+    1. schema is used to validate arguments passed to the constructor
+    2. schema validation errors are thrown after being casted to a helpful representation
+    3. all properties of arguments that match keys of the model schema are assigned to the object during construction
 2. makes it easy to compose models
-  1. by simply defining the dependencies of each key, the model automatically casts the properties into those models
+    1. by simply defining the dependencies of each key, the model automatically casts the properties into those models
 
 ## Installation
 ```
@@ -33,8 +33,8 @@ class Image extends SchematicJoiModel<ImageConstructorParams> {
 }
 
 // model usage:
-const image = new Image({ uuid: 'ff8b3da2-aba8-43f5-b1fc-5609d23c684f' }); // returns: { uuid: 'ff8b3da2-aba8-43f5-b1fc-5609d23c684f', path: undefined }
-const image = new Image({ uuid: 'not a uuid' }); // throws validation error
+new Image({ uuid: 'ff8b3da2-aba8-43f5-b1fc-5609d23c684f' }); // returns: Image { uuid: 'ff8b3da2-aba8-43f5-b1fc-5609d23c684f', path: undefined }
+new Image({ uuid: 'not a uuid' }); // throws validation error
 ```
 
 
@@ -67,7 +67,30 @@ class User extends SchematicJoiModel<UserConstructorParams> {
     avatar: Image,
   };
 }
+
+
+new User({
+  uuid: '4e4cb5f9-5949-4b47-af77-d1eec4ab8fb5',
+  name: 'bessy',
+  age: 21,
+  avatar: {
+    uuid: 'b4380823-917d-4e0c-bf9a-aa53fae6ff98',
+  },
+});
+/*
+returns:
+  User {
+    uuid: '4e4cb5f9-5949-4b47-af77-d1eec4ab8fb5',
+    name: 'bessy',
+    age: 21,
+    avatar: Image {
+     uuid: 'b4380823-917d-4e0c-bf9a-aa53fae6ff98',
+     path: undefined
+    }
+  }
+*/
 ```
+Notice that the avatar property of the instance of the instantiated `User` model is an instance of the `Image` model
 
 ## To Do
 #### deduplication of type definitions
