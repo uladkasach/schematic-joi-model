@@ -2,22 +2,32 @@
 import Joi from 'joi';
 import ValidationError from './validationError';
 
-export default abstract class SchematicJoiModel {
+export default abstract class SchematicJoiModel<ConstructorTypes> {
   protected static schema: Joi.ObjectSchema;
+  protected static dependencies: { [index: string]: new (props: any) => SchematicJoiModel<any> };
 
   // validation and assignment
-  constructor(params: any) {
+  constructor(props: ConstructorTypes) {
     // grab the schema from constructor
     const schema = (this.constructor as typeof SchematicJoiModel).schema;
 
     // validate the params
-    const result = (this.constructor as typeof SchematicJoiModel).schema.validate(params);
+    const result = (this.constructor as typeof SchematicJoiModel).schema.validate(props);
     const modelName = (this.constructor as typeof SchematicJoiModel).name;
-    if (!!result.error) throw new ValidationError({ model: modelName, error: result.error, props: params });
+    if (!!result.error) throw new ValidationError({ model: modelName, error: result.error, props });
 
     // map schema params to self
     const description = Joi.describe(schema);
     const children = description.children;
-    Object.keys(children).forEach(key => (this as any)[key] = (params as any)[key]); // map each param from schema keys to object
+    const dependencies = (this.constructor as typeof SchematicJoiModel).dependencies;
+    Object.keys(children).forEach((key) => {
+      // derive value
+      const rawValue = (props as any)[key];
+      const keyHasDependency = !!dependencies && key in dependencies;
+      const value = (keyHasDependency) ? new dependencies[key](rawValue) : rawValue;
+
+      // append value as property of this instance
+      (this as any)[key] = value;
+    });
   }
 }
