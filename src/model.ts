@@ -31,7 +31,8 @@ export default abstract class SchematicJoiModel<ConstructorTypes> {
       // define facts relevant for value derivation
       const keyHasDependency = !!dependencies && key in dependencies;
       const keyIsForArray = Array.isArray(rawValue);
-      const castingMethod = (keyHasDependency) ? (value: any) => new dependencies[key](value) : (value: any) => value;
+      const valueIsTruthy = !!rawValue; // we only cast values to models if they are truthy
+      const castingMethod = (keyHasDependency && valueIsTruthy) ? (value: any) => new dependencies[key](value) : (value: any) => value;
 
       // derive the value
       const valueArray = (keyIsForArray) ? rawValue : [rawValue]; // cast raw value into array, if not already

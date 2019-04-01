@@ -138,6 +138,41 @@ describe('SchematicJoiModel', () => {
       expect(album.photos.length).toEqual(2);
       album.photos.forEach(photo => expect(photo.constructor).toEqual(Image));
     });
+    it('should not throw an error if the model property is nullable and is null', () => {
+      // create a user object that uses the image object
+      const userSchema = Joi.object().keys({
+        uuid: Joi.string().uuid().required(),
+        name: Joi.string(),
+        age: Joi.number().integer(),
+        avatar: Image.schema.allow(null),
+      });
+      interface UserConstructorParams {
+        uuid: string;
+        name: string;
+        age: number;
+        avatar: Image | null;
+      }
+      class User extends SchematicJoiModel<UserConstructorParams> {
+        // properties: TODO: extract types from Joi schema (?)
+        public uuid!: string;
+        public name!: string;
+        public age!: number;
+        public avatar!: Image | null;
+
+        // for validation and property assignment
+        public static schema = userSchema;
+        public static dependencies = {
+          avatar: Image,
+        };
+      }
+      const user = new User({
+        uuid: '4e4cb5f9-5949-4b47-af77-d1eec4ab8fb5',
+        name: 'bessy',
+        age: 21,
+        avatar: null,
+      });
+      expect(user.avatar).toEqual(null);
+    });
   });
 
   /**
